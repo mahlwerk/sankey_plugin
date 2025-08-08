@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('C:/Users/ba2fc6/Documents/python/map_data.csv')
+df = pd.read_csv('C:/Users/ba2fc6/Documents/python/sankey/map_data.csv')
 
 df.head()
 
@@ -11,7 +11,15 @@ colour_scheme = {
     "Totalschaden neu": "rgb(255, 0, 0)",
     "schwerer Schaden neu": "rgb(0, 0, 255)", #blue
     "schwerer Schaden alt": "rgb(0, 0, 255)",
-    "total beschädigt":"rgb(255, 200, 70)" #yellow
+    "nicht kartiert": "rgb(0, 0, 0)",
+    "total beschädigt":"rgb(255, 200, 70)", #yellow
+    "Mauerteile, die einzustürzen drohen": "rgb(255, 200, 70)",
+    "augebrannt, Außenmauerteile schwer beschädigt":"rgb(255, 200, 70)",
+    "ausgebrannt, Außenmauerteile leicht beschädigt": "rgb(255, 200, 70)",
+    "schwer beschädigt, aber Außenmauerteile noch gut erhalten": "rgb(255, 200, 70)",
+    "schwer beschädigt": "rgb(255, 200, 70)",
+    "unbeschädigt": "rgb(255, 200, 70)",
+    "leicht oder mittel beschädigt": "rgb(255, 200, 70)"
     
 }
 
@@ -98,6 +106,23 @@ def create_value_list(combo_dict):
     return value_list
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# colour input
+
+# get the label_list and from the colour scheme get the colour value for each label in the order of the label_list
+def create_category_colour_list(colour_dict, label_list):
+    category_colour_list =[]
+    for category in label_list:
+        try:
+            category_colour_list.append(colour_dict[category])
+        except:
+            print(category)
+            print("could not be found, trying to remove suffix")
+            # delete the last two characters (_1/_2) and try again
+            category_colour_list.append(colour_dict[category[:-2]])        
+    return category_colour_list
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 # from this create a dict with a count for all combinations
 combinations_dict = {}
 for value in df["combo1"]:      #alternatively use list.count() ?
@@ -111,6 +136,7 @@ print(combinations_dict)
 
 label_list = create_label_list(df[map_1], df[map_2])
 colour_list = create_colour_list(label_list)
+categorisation_list = create_category_colour_list(colour_scheme, label_list)
 source_list = create_source_list(combinations_dict, label_list)
 target_list = create_target_list(combinations_dict, label_list) 
 value_list = create_value_list(combinations_dict)
@@ -122,7 +148,7 @@ map_fig = go.Figure(data=[go.Sankey(
       thickness = 20,
       line = dict(color = "black", width = 0.5),
       label = label_list,
-      color = colour_list
+      color = categorisation_list
     ),
     link = dict(
       source = source_list, # indices correspond to labels, eg A1, A2, A1, B1, ...
