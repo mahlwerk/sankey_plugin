@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('C:/Users/ba2fc6/Documents/python/sankey/map_data.csv')
+df = pd.read_csv('C:/Users/ba2fc6/Documents/python/map_data.csv')
 
 df.head()
 
