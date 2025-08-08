@@ -1,3 +1,6 @@
+# turning attribute columns from a qgis database into a sankey diagramm
+# based on: https://plotly.com/python/sankey-diagram/
+
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
@@ -11,7 +14,7 @@ colour_scheme = {
     "Totalschaden neu": "rgb(255, 0, 0)",
     "schwerer Schaden neu": "rgb(0, 0, 255)", #blue
     "schwerer Schaden alt": "rgb(0, 0, 255)",
-    "nicht kartiert": "rgb(0, 0, 0)",
+    "nicht kartiert": "rgb(200, 200, 200)",
     "total beschädigt":"rgb(255, 200, 70)", #yellow
     "Mauerteile, die einzustürzen drohen": "rgb(255, 200, 70)",
     "augebrannt, Außenmauerteile schwer beschädigt":"rgb(255, 200, 70)",
@@ -19,8 +22,7 @@ colour_scheme = {
     "schwer beschädigt, aber Außenmauerteile noch gut erhalten": "rgb(255, 200, 70)",
     "schwer beschädigt": "rgb(255, 200, 70)",
     "unbeschädigt": "rgb(255, 200, 70)",
-    "leicht oder mittel beschädigt": "rgb(255, 200, 70)"
-    
+    "leicht oder mittel beschädigt": "rgb(255, 200, 70)"    
 }
 
 # add names of attributes (maps) that you mean to compare
@@ -121,6 +123,31 @@ def create_category_colour_list(colour_dict, label_list):
             # delete the last two characters (_1/_2) and try again
             category_colour_list.append(colour_dict[category[:-2]])        
     return category_colour_list
+
+# create a colour scheme with less opacity for links trough string manipulation "rgb(0,0,0)" => "rgba(0,0,0,0.5)"
+def create_link_colour_scheme(colour_dict):
+    link_colour_scheme = {}
+    for key, value in colour_dict.items():
+        split_text = value.split("(")
+        rgba_text = split_text[0] + "a(" + split_text[1]
+        strip_text = rgba_text.strip(")")
+        opacity = strip_text + ",0.6)"
+        link_colour_scheme[key] = opacity
+    return link_colour_scheme
+
+# get colours for links from colour scheme based on source_list entries
+def create_link_colour_list(colour_dict, source_list, label_list):
+    link_colour_list = []
+    for source in source_list:
+        category = label_list[source]
+        try:
+            link_colour_list.append(colour_dict[category])
+        except:
+            print(category)
+            print("could not be found, trying to remove suffix")
+            # delete the last two characters (_1/_2) and try again
+            link_colour_list.append(colour_dict[category[:-2]])   # maybe first filter out suffixes from list to safe this?
+    return link_colour_list
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # from this create a dict with a count for all combinations
@@ -140,6 +167,8 @@ categorisation_list = create_category_colour_list(colour_scheme, label_list)
 source_list = create_source_list(combinations_dict, label_list)
 target_list = create_target_list(combinations_dict, label_list) 
 value_list = create_value_list(combinations_dict)
+link_colour_scheme = create_link_colour_scheme(colour_scheme)
+link_colours = create_link_colour_list(link_colour_scheme, source_list, label_list)
 
 
 map_fig = go.Figure(data=[go.Sankey(
@@ -153,7 +182,8 @@ map_fig = go.Figure(data=[go.Sankey(
     link = dict(
       source = source_list, # indices correspond to labels, eg A1, A2, A1, B1, ...
       target = target_list,
-      value = value_list
+      value = value_list,
+      color = link_colours
   ))])
 
 map_fig.update_layout(title_text="Comparison X208 and 2469", font_size=10)
