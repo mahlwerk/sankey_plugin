@@ -212,6 +212,7 @@ map_fig.update_layout(title_text="Comparison X208 and 2469", font_size=10)
 
 # write to image: https://plotly.github.io/plotly.py-docs/generated/plotly.io.to_image.html
 # to create an image output use the following:
+# (this needs kaleido and chrome to be installed)
 map_fig.write_image(file = "sankey_diagram.png", 
                     format = "png",
                     scale = 5.0)
