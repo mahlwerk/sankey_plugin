@@ -187,7 +187,11 @@ map_fig = go.Figure(data=[go.Sankey(
   ))])
 
 map_fig.update_layout(title_text="Comparison X208 and 2469", font_size=10)
-map_fig.show()
+#map_fig.show()
+# write to image: https://plotly.github.io/plotly.py-docs/generated/plotly.io.to_image.html
+map_fig.write_image(file = "img_test.png", 
+                    format = "png",
+                    scale = 5.0)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # sankey example
 
