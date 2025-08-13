@@ -5,10 +5,14 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
+# first import your attributetable from a csv file to a pandas dataframe
 df = pd.read_csv('C:/Users/ba2fc6/Documents/python/sankey/map_data.csv')
 
 df.head()
 
+# right now you have to hard code your colourscheme if you do not want to use random colours
+# this approach uses the categorisation strings as key and gives them an rgb value
+# (needs to be string format for plotly sankey figure method)
 colour_scheme = {
     "Totalschaden alt": "rgb(255, 0, 0)", #red
     "Totalschaden neu": "rgb(255, 0, 0)",
@@ -26,14 +30,33 @@ colour_scheme = {
 }
 
 # add names of attributes (maps) that you mean to compare
+# here this needs to be hardcoded, in the plugin version these are variables assigned in the GUI
 map_1 = "Schad_X208"
 map_2 = "Schad_2469"
 
 # combine values from attributes(maps) with a ':' as delimiter
+# this way unique identifiers for each relationship are created
 df["combo1"] = df[map_1] + ":" + df[map_2]
+
+# from the attribute data frame create a dict with a count for all combinations
+combinations_dict = {}
+for value in df["combo1"]:      #alternatively use list.count() ?
+    if value in combinations_dict:
+        combinations_dict[value] +=1
+    else:
+        combinations_dict[value] = 1
+
+print(combinations_dict)
+#value_relation(df["Schad_X208"], df["Schad_2469"])
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # functions for sankey diagramm input
+# the plotly sankey diagram needs a number of inputs, the following functions translate our
+# data into the format required by plotly
+
+# lists the categorisation labels
+# if a category appears in both columns/maps suffixes are introduced
+# to differentiate them 
 def create_label_list(col1, col2):
     categories_1 = list(dict.fromkeys(col1))
     categories_2 = list(dict.fromkeys(col2))
@@ -57,6 +80,46 @@ def create_label_list(col1, col2):
     print(label_list)
     return label_list
 
+# creates a list of the categories that are sources
+# when categories are not found in the label list this must be
+# due to the suffixes added in the label list creation
+# so those are added on the second try to get the index
+def create_source_list(combo_dict, label_list):
+    source_list = []
+    for value in combo_dict:
+        # get the first catgeory of the pair and find it's index in the label list
+        category = value.split(":")[0]
+        try:
+            source_list.append(label_list.index(category))
+        except:
+            source_list.append(label_list.index(category + "_1"))
+    return source_list
+
+# c.f. source list creation above
+def create_target_list(combo_dict, label_list):
+    target_list = []
+    for value in combo_dict:
+        # get the second catgeory of the pair and find it's index in the label list
+        category = value.split(":")[1]
+        try:
+            target_list.append(label_list.index(category))
+        except:
+            target_list.append(label_list.index(category + "_2"))
+    return target_list
+
+# transforms the dict into a list (idk there is probably a build in method for this)
+def create_value_list(combo_dict):
+    value_list = []
+    for value in combo_dict:
+        # get the value from the key-value pair
+        value_list.append(combo_dict[value])
+    return value_list
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# colour input
+
+# creates random colours, iy you do not use a colour scheme
 def random_colour_generator():
     colour = []
     c = 0
@@ -69,47 +132,13 @@ def random_colour_generator():
     rgb = "rgba(" + numbers + ",0.8)"
     return rgb
 
+# if you use a colour scheme:
+# get colours from colour dict, to reflect map legend
 def create_colour_list(label_list):
-    # get colours from colour dict, to reflect map legend
     colour_list = []
     for category in label_list:
         colour_list.append(random_colour_generator())
     return colour_list
-
-
-def create_source_list(combo_dict, label_list):
-    source_list = []
-    for value in combo_dict:
-        # get the first catgeory of the pair and find it's index in the label list
-        category = value.split(":")[0]
-        try:
-            source_list.append(label_list.index(category))
-        except:
-            source_list.append(label_list.index(category + "_1"))
-
-    return source_list
-
-def create_target_list(combo_dict, label_list):
-    target_list = []
-    for value in combo_dict:
-        # get the second catgeory of the pair and find it's index in the label list
-        category = value.split(":")[1]
-        try:
-            target_list.append(label_list.index(category))
-        except:
-            target_list.append(label_list.index(category + "_2"))
-    return target_list
-
-def create_value_list(combo_dict):
-    value_list = []
-    for value in combo_dict:
-        # get the value from the key-value pair
-        value_list.append(combo_dict[value])
-    return value_list
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# colour input
 
 # get the label_list and from the colour scheme get the colour value for each label in the order of the label_list
 def create_category_colour_list(colour_dict, label_list):
@@ -124,7 +153,7 @@ def create_category_colour_list(colour_dict, label_list):
             category_colour_list.append(colour_dict[category[:-2]])        
     return category_colour_list
 
-# create a colour scheme with less opacity for links trough string manipulation "rgb(0,0,0)" => "rgba(0,0,0,0.5)"
+# create a colour scheme with less opacity for links through string manipulation "rgb(0,0,0)" => "rgba(0,0,0,0.5)"
 def create_link_colour_scheme(colour_dict):
     link_colour_scheme = {}
     for key, value in colour_dict.items():
@@ -150,17 +179,7 @@ def create_link_colour_list(colour_dict, source_list, label_list):
     return link_colour_list
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# from this create a dict with a count for all combinations
-combinations_dict = {}
-for value in df["combo1"]:      #alternatively use list.count() ?
-    if value in combinations_dict:
-        combinations_dict[value] +=1
-    else:
-        combinations_dict[value] = 1
-
-print(combinations_dict)
-#value_relation(df["Schad_X208"], df["Schad_2469"])
-
+# create all the lists needed
 label_list = create_label_list(df[map_1], df[map_2])
 colour_list = create_colour_list(label_list)
 categorisation_list = create_category_colour_list(colour_scheme, label_list)
@@ -170,7 +189,7 @@ value_list = create_value_list(combinations_dict)
 link_colour_scheme = create_link_colour_scheme(colour_scheme)
 link_colours = create_link_colour_list(link_colour_scheme, source_list, label_list)
 
-
+# create the sankey diagram
 map_fig = go.Figure(data=[go.Sankey(
     node = dict(
       pad = 15,
@@ -187,27 +206,12 @@ map_fig = go.Figure(data=[go.Sankey(
   ))])
 
 map_fig.update_layout(title_text="Comparison X208 and 2469", font_size=10)
-#map_fig.show()
+
+# to create an interactive output int the browser use the following:
+# map_fig.show()
+
 # write to image: https://plotly.github.io/plotly.py-docs/generated/plotly.io.to_image.html
-map_fig.write_image(file = "img_test.png", 
+# to create an image output use the following:
+map_fig.write_image(file = "sankey_diagram.png", 
                     format = "png",
                     scale = 5.0)
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# sankey example
-
-fig = go.Figure(data=[go.Sankey(
-    node = dict(
-      pad = 15,
-      thickness = 20,
-      line = dict(color = "black", width = 0.5),
-      label = ["A1", "A2", "B1", "B2", "C1", "C2"],
-      color = ["blue", "blue", "red", "red", "yellow", "yellow"]
-    ),
-    link = dict(
-      source = [0, 1, 0, 2, 3, 3], # indices correspond to labels, eg A1, A2, A1, B1, ...
-      target = [2, 3, 3, 4, 4, 5],
-      value = [8, 4, 2, 8, 4, 2]
-  ))])
-
-# fig.update_layout(title_text="Basic Sankey Diagram", font_size=10)
-# fig.show()
