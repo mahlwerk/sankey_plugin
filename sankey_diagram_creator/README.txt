@@ -1,11 +1,5 @@
 Plugin Builder Results
 
-Your plugin SankeyDiagram was created in:
-    C:/Users/ba2fc6/Documents/python\sankey_diagram_creator
-
-Your QGIS plugin directory is located at:
-    C:/Users/ba2fc6/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
-
 What's Next:
 
   * Copy the entire directory containing your new plugin to the QGIS plugin
